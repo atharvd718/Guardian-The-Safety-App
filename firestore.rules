@@ -1,0 +1,111 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User collection
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'name', 'email'])
+          && data.uid is string && data.uid == userId
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+          && data.email is string && data.email.size() > 0 && data.email.size() <= 150
+          && (!('phone' in data) || (data.phone is string && data.phone.size() <= 30))
+          && (!('dob' in data) || (data.dob is string && data.dob.size() <= 20))
+          && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100))
+          && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
+      }
+
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().uid == existing().uid;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Emergency Contacts Subcollection
+      match /contacts/{contactId} {
+        function isValidContact(data) {
+          return data.keys().hasAll(['userId', 'friendName', 'friendPhone'])
+            && data.userId is string && data.userId == userId
+            && data.friendName is string && data.friendName.size() > 0 && data.friendName.size() <= 100
+            && data.friendPhone is string && data.friendPhone.size() > 0 && data.friendPhone.size() <= 30
+            && (!('id' in data) || (data.id is string && data.id.size() <= 128))
+            && (!('friendRelation' in data) || (data.friendRelation is string && data.friendRelation.size() <= 50))
+            && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100));
+        }
+
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(contactId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(contactId) && isValidContact(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(contactId) && isValidContact(incoming()) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(contactId);
+      }
+
+      // Audio Records Subcollection
+      match /audioRecords/{recordId} {
+        function isValidAudioRecord(data) {
+          return data.keys().hasAll(['userId', 'fileName', 'date'])
+            && data.userId is string && data.userId == userId
+            && data.fileName is string && data.fileName.size() > 0 && data.fileName.size() <= 200
+            && data.date is string && data.date.size() > 0 && data.date.size() <= 100
+            && (!('id' in data) || (data.id is string && data.id.size() <= 128))
+            && (!('duration' in data) || (data.duration is string && data.duration.size() <= 50))
+            && (!('audioUrl' in data) || (data.audioUrl is string && data.audioUrl.size() <= 1000))
+            && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100));
+        }
+
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(recordId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(recordId) && isValidAudioRecord(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(recordId) && isValidAudioRecord(incoming()) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(recordId);
+      }
+
+      // SMS Logs Subcollection
+      match /smsLogs/{logId} {
+        function isValidSmsLog(data) {
+          return data.keys().hasAll(['userId', 'timestamp', 'recipients', 'message', 'status'])
+            && data.userId is string && data.userId == userId
+            && data.timestamp is string && data.timestamp.size() > 0 && data.timestamp.size() <= 100
+            && data.recipients is list && data.recipients.size() <= 20
+            && data.message is string && data.message.size() > 0 && data.message.size() <= 1000
+            && data.status is string && (data.status == 'Sent' || data.status == 'Failed')
+            && (!('id' in data) || (data.id is string && data.id.size() <= 128))
+            && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 100));
+        }
+
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(logId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(logId) && isValidSmsLog(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(logId) && isValidSmsLog(incoming()) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(logId);
+      }
+    }
+  }
+}

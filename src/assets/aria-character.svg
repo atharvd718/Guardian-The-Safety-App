@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="skin" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FAD6C4" />
+      <stop offset="100%" stop-color="#E2B196" />
+    </linearGradient>
+    <linearGradient id="hair" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A3424" />
+      <stop offset="100%" stop-color="#2D1E13" />
+    </linearGradient>
+    <linearGradient id="sweater" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3AC9B9" />
+      <stop offset="100%" stop-color="#218B7F" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Back Hair -->
+  <path d="M80,100 C40,150 40,220 50,280 C60,330 130,300 150,280 C170,300 240,330 250,280 C260,220 260,150 220,100 Z" fill="url(#hair)"/>
+
+  <!-- Neck -->
+  <path d="M135,160 L165,160 L165,190 L135,190 Z" fill="url(#skin)"/>
+  <path d="M135,185 C145,195 155,195 165,185 L165,210 L135,210 Z" fill="#C59376"/>
+
+  <!-- Pants -->
+  <path d="M90,340 C120,350 180,350 210,340 L220,400 L80,400 Z" fill="#1A202C"/>
+
+  <!-- Sweater / Torso -->
+  <path d="M90,195 C70,200 45,230 40,280 C35,320 50,340 90,340 C120,350 180,350 210,340 C250,340 265,320 260,280 C255,230 230,200 210,195 C180,175 120,175 90,195 Z" fill="url(#sweater)" filter="url(#shadow)"/>
+  
+  <!-- Left Arm (Holding Phone) -->
+  <path d="M45,220 C20,260 20,300 50,330 C60,340 70,340 80,320 L90,260 Z" fill="url(#sweater)"/>
+  
+  <!-- Right Arm (Gesturing) -->
+  <path d="M255,220 C280,260 280,300 250,330 C240,340 230,340 220,320 L210,260 Z" fill="url(#sweater)"/>
+
+  <!-- Face Base -->
+  <ellipse cx="150" cy="130" rx="36" ry="46" fill="url(#skin)" filter="url(#shadow)"/>
+  <path d="M114,130 C114,165 130,176 150,176 C170,176 186,165 186,130 Z" fill="url(#skin)"/>
+
+  <!-- Phone -->
+  <rect x="35" y="275" width="30" height="50" rx="4" fill="#333" filter="url(#shadow)"/>
+  <rect x="38" y="278" width="24" height="44" rx="2" fill="#E2F1ED"/>
+  
+  <!-- Left Hand (holding phone) -->
+  <circle cx="65" cy="310" r="12" fill="url(#skin)"/>
+  <circle cx="35" cy="300" r="6" fill="url(#skin)"/>
+
+  <!-- Right Hand (gesturing) -->
+  <circle cx="235" cy="310" r="14" fill="url(#skin)"/>
+  <path d="M235,296 C235,286 242,286 242,296 L242,306 C242,310 235,310 235,306 Z" fill="url(#skin)"/>
+
+  <!-- Face Details -->
+  <!-- Brows -->
+  <path d="M125,120 Q135,115 142,120" stroke="#2D1E13" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M158,120 Q165,115 175,120" stroke="#2D1E13" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Eyes -->
+  <path d="M127,130 Q133,126 139,130" stroke="#2D1E13" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M161,130 Q167,126 173,130" stroke="#2D1E13" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="133" cy="132" r="3" fill="#2D1E13"/>
+  <circle cx="167" cy="132" r="3" fill="#2D1E13"/>
+
+  <!-- Nose -->
+  <path d="M150,140 L150,150 C150,153 153,153 153,150" stroke="#C59376" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Mouth (Smile) -->
+  <path d="M138,160 Q150,168 162,160" stroke="#9E4D41" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M138,160 Q150,165 162,160" stroke="#E57373" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Front Hair (Bangs/Framing) -->
+  <path d="M150,80 C110,80 100,120 105,170 C110,130 130,100 150,100 C170,100 190,130 195,170 C200,120 190,80 150,80 Z" fill="url(#hair)"/>
+  <path d="M150,80 C120,80 115,110 120,140 C130,100 140,95 150,95 Z" fill="#5D4330" opacity="0.6"/>
+</svg>

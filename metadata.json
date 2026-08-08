@@ -1,0 +1,11 @@
+{
+  "name": "Guardian Safety App",
+  "description": "Personal safety application with SOS emergency broadcasts, location tracking, audio recording, SMS alerts, emergency contacts management, and ShieldMate AI chatbot.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

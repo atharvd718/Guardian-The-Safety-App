@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "dob": { "type": "string", "maxLength": 20 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Contact": {
+      "title": "Contact",
+      "description": "Emergency contact for a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "friendName": { "type": "string", "maxLength": 100 },
+        "friendPhone": { "type": "string", "maxLength": 30 },
+        "friendRelation": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "friendName", "friendPhone"]
+    },
+    "AudioRecord": {
+      "title": "AudioRecord",
+      "description": "Recorded audio safety evidence log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "fileName": { "type": "string", "maxLength": 200 },
+        "date": { "type": "string", "maxLength": 100 },
+        "duration": { "type": "string", "maxLength": 50 },
+        "audioUrl": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "fileName", "date"]
+    },
+    "SmsLog": {
+      "title": "SmsLog",
+      "description": "Emergency alert SMS log entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "timestamp": { "type": "string", "maxLength": 100 },
+        "recipients": {
+          "type": "array",
+          "description": "List of phone numbers alert was sent to"
+        },
+        "message": { "type": "string", "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["Sent", "Failed"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "timestamp", "recipients", "message", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile document"
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/Contact" },
+      "description": "Emergency contacts subcollection for user"
+    },
+    "/users/{userId}/audioRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/AudioRecord" },
+      "description": "Audio recordings safety logs subcollection for user"
+    },
+    "/users/{userId}/smsLogs/{logId}": {
+      "schema": { "$ref": "#/entities/SmsLog" },
+      "description": "SMS logs subcollection for user"
+    }
+  }
+}
