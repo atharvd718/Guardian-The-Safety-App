@@ -18,6 +18,7 @@ export interface SafePlace {
 }
 
 export interface ContactNew {
+  id?: string;
   friendName: string;
   friendPhone: string;
   friendRelation: string;

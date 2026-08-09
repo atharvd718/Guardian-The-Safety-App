@@ -146,8 +146,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }, 1000);
   };
 
-  // Animation variants
-  const containerVariants = {
+  const containerVariants: any = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -155,7 +154,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   };
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.3 } }
   };
@@ -301,7 +300,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <motion.button
             variants={itemVariants}
-            onClick={() => onNavigate('shield_mate')}
+            onClick={() => onNavigate('aria')}
             className="bg-[var(--color-surface)] backdrop-blur-md border border-[var(--color-border)] shadow-sm p-5 rounded-3xl flex flex-col items-start gap-4 active:scale-95 transition-transform"
           >
             <div className="w-12 h-12 rounded-2xl bg-[#0EA5E9]/10 flex items-center justify-center border border-[#0EA5E9]/20">

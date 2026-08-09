@@ -118,7 +118,7 @@ export const HelplinesView: React.FC<HelplinesViewProps> = ({ onBack }) => {
       if (matchedNumbers.length > 0) return { ...section, filteredNumbers: matchedNumbers };
       return null;
     })
-    .filter(Boolean) as typeof helplineData & { filteredNumbers: typeof helplineData[0]['numbers'] }[];
+    .filter(Boolean) as any[];
 
   const isSearching = searchQuery.trim().length > 0;
 
@@ -250,7 +250,7 @@ export const HelplinesView: React.FC<HelplinesViewProps> = ({ onBack }) => {
               {/* Numbers — auto expand when searching */}
               {(expandedIndex === idx || isSearching) && (
                 <div className="bg-white/40">
-                  {section.filteredNumbers.map((item, i) => (
+                  {section.filteredNumbers.map((item: any, i: number) => (
                     <div
                       key={i}
                       className={`flex justify-between items-center p-4 ${i !== 0 ? 'border-t border-black/5' : ''}`}

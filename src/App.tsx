@@ -20,6 +20,7 @@ import { ARIAView } from './components/ARIAView';
 import { SafePlacesView } from './components/SafePlacesView';
 import { HelplinesView } from './components/HelplinesView';
 import { SelfDefenseView } from './components/SelfDefenseView';
+import InstallPWA from './components/InstallPWA';
 
 export function App() {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('splash');
@@ -63,6 +64,21 @@ export function App() {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const action = params.get('action')
+    if (action === 'sos' && currentScreen === 'dashboard') {
+      // Will auto-trigger SOS when opened via homescreen shortcut
+      console.log('SOS shortcut triggered')
+    }
+    if (action === 'aria') {
+      setCurrentScreen('aria')
+    }
+    if (action === 'helplines') {
+      setCurrentScreen('helplines')
+    }
+  }, [])
 
   const handleSplashFinish = () => {
     if (!StorageService.isOnboardingFinished()) {
@@ -115,8 +131,8 @@ export function App() {
             {currentScreen === 'register' && (
               <RegisterView
                 onNavigateLogin={() => setCurrentScreen('login')}
-                onNext={(name, email, pass) => {
-                  setRegisterData({ name, email, pass });
+                onNext={(data: any) => {
+                  setRegisterData(data);
                   setCurrentScreen('register_detail');
                 }}
               />
@@ -124,7 +140,7 @@ export function App() {
 
             {currentScreen === 'register_detail' && (
               <RegisterDetailView
-                registerData={registerData}
+                initialData={registerData}
                 onBack={() => setCurrentScreen('register')}
                 onRegisterSuccess={() => setCurrentScreen('dashboard')}
               />
@@ -138,7 +154,7 @@ export function App() {
             )}
 
             {currentScreen === 'emergency_sms' && (
-              <EmergencySmsView onBack={() => setCurrentScreen('dashboard')} />
+              <EmergencySmsView onBack={() => setCurrentScreen('dashboard')} onNavigate={(screen: any) => setCurrentScreen(screen)} />
             )}
 
             {currentScreen === 'record_audio' && (
@@ -178,6 +194,7 @@ export function App() {
           </div>
         </div>
       </SignedIn>
+      <InstallPWA />
     </>
   );
 }

@@ -5,16 +5,16 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { SafePlace } from '../types';
 
-// Fix Leaflet marker icons in React
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl,
-  iconUrl,
-  shadowUrl,
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
 });
+L.Marker.prototype.options.icon = DefaultIcon;
 
 interface SafePlacesViewProps {
   onBack: () => void;

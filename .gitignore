@@ -27,3 +27,9 @@ dist-ssr
 .env
 .env.*
 firebase-applet-config.json
+.env.local
+.env.production
+.env.keys
+.vercel
+.vercel
+.env*
