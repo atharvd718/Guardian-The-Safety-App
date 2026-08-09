@@ -20,16 +20,41 @@ import {
   query,
   orderBy
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
 import { Users, ContactNew, AudioRecordItem, SmsLogItem } from '../types';
 
-// Initialize Firebase App
-const app = initializeApp(firebaseConfig);
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
 
-// CRITICAL: Initialize Firestore with database ID from config
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
+Object.entries(firebaseConfig).forEach(([key, value]) => {
+  if (value === undefined || value === '') {
+    console.warn(`Firebase config warning: ${key} is undefined or empty! Check your .env file.`);
+  }
+});
+
+let appInstance: any;
+let dbInstance: any;
+let authInstance: any;
+let googleProviderInstance: any;
+
+try {
+  appInstance = initializeApp(firebaseConfig);
+  dbInstance = getFirestore(appInstance);
+  authInstance = getAuth(appInstance);
+  googleProviderInstance = new GoogleAuthProvider();
+} catch (error) {
+  console.error('Failed to initialize Firebase:', error);
+}
+
+export const app = appInstance;
+export const db = dbInstance;
+export const auth = authInstance;
+export const googleProvider = googleProviderInstance;
 
 export enum OperationType {
   CREATE = 'create',
@@ -80,6 +105,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 
 // Connection test
 async function testConnection() {
+  if (!db) return;
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {

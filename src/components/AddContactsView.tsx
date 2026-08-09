@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { ArrowLeft, UserPlus, Phone, Heart, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 import { StorageService } from '../lib/storage';
 import { ContactInfo } from '../types';
@@ -17,6 +20,7 @@ const DEVICE_CONTACTS_PRESETS: ContactInfo[] = [
 ];
 
 export const AddContactsView: React.FC<AddContactsViewProps> = ({ onBack }) => {
+  const { user } = useUser();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [relation, setRelation] = useState('Family');
@@ -25,7 +29,23 @@ export const AddContactsView: React.FC<AddContactsViewProps> = ({ onBack }) => {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
 
-  const handleSaveContact = (e: React.FormEvent) => {
+  const saveContact = async (contact: any) => {
+    if (!user) return;
+    try {
+      const contactsRef = collection(db, 'users', user.id, 'contacts');
+      await addDoc(contactsRef, {
+        friendName: contact.name,
+        friendPhone: contact.phone,
+        friendRelation: contact.relation || 'Contact',
+        createdAt: serverTimestamp()
+      });
+      console.log('Contact saved to Firestore');
+    } catch (error) {
+      console.error('Failed to save contact:', error);
+    }
+  };
+
+  const handleSaveContact = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -40,10 +60,10 @@ export const AddContactsView: React.FC<AddContactsViewProps> = ({ onBack }) => {
       return;
     }
 
-    StorageService.addContact({
-      friendName: name.trim(),
-      friendPhone: cleanedPhone,
-      friendRelation: relation,
+    await saveContact({
+      name: name.trim(),
+      phone: cleanedPhone,
+      relation: relation,
     });
 
     setToast(`${name.trim()} added to Emergency Contacts!`);

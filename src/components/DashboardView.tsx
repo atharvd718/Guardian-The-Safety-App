@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser, UserButton } from '@clerk/clerk-react';
+import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { toast } from 'react-hot-toast';
 import { ShieldWarning, ChatCircle, Microphone, Crosshair, Robot, Users, MapPin, BatteryWarning, BatteryCharging, Lightning, CheckCircle, Power, UserCircle, SignOut, PhoneCall, VideoCamera } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StorageService } from '../lib/storage';
@@ -18,7 +21,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onLogout,
 }) => {
   const { user } = useUser();
-  const contacts = StorageService.getContacts();
+  const [contacts, setContacts] = useState<ContactNew[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadContacts = async () => {
+      try {
+        const contactsRef = collection(db, 'users', user.id, 'contacts');
+        const snapshot = await getDocs(contactsRef);
+        const loaded = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as ContactNew[];
+        setContacts(loaded);
+      } catch (error) {
+        console.error('Failed to load contacts for dashboard:', error);
+      }
+    };
+    loadContacts();
+  }, [user]);
 
   const {
     isLowBattery,
@@ -35,7 +56,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [sosSuccessToast, setSosSuccessToast] = useState('');
 
   // Handle SOS Click (Triggers exact Android workflow from DashboardFragment.kt)
-  const handleSosClick = () => {
+  const handleSosClick = async () => {
     if (contacts.length === 0) {
       setIsNoContactsOpen(true);
       return;
@@ -44,76 +65,85 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const confirmed = window.confirm('Are you sure you want to send SOS?');
     if (!confirmed) return;
 
+    try {
+      await addDoc(collection(db, 'incidents'), {
+        userId: user?.id || 'anonymous',
+        userName: user?.fullName || 'Unknown',
+        userEmail: user?.primaryEmailAddress?.emailAddress || '',
+        timestamp: serverTimestamp(),
+        type: 'SOS',
+        status: 'active',
+        location: {
+          lat: 0,
+          lng: 0,
+          address: 'Location pending'
+        },
+        deviceInfo: navigator.userAgent
+      });
+      console.log('SOS incident saved to Firestore');
+    } catch (error) {
+      console.error('Failed to save SOS incident:', error);
+    }
+
     setIsProgressOpen(true);
-    setProgressMsg('Starting SOS Command...');
+    setProgressMsg('Fetching current GPS location...');
 
-    setTimeout(() => {
-      setProgressMsg('Fetching current GPS location...');
+    let lat = 28.535517;
+    let lng = 77.391029;
+
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+      });
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch (err) {
+      console.warn('Geolocation failed, using fallback coordinates');
+    }
+
+    const mapLink = `https://maps.google.com/?q=${lat.toFixed(5)},${lng.toFixed(5)}`;
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const message = `SOS Alert! ${user?.fullName || 'User'} is in danger! Need help!\nTime: ${timestamp}\nLocation: ${mapLink}`;
+
+    setProgressMsg(`Broadcasting SOS to ${contacts.length} emergency contacts...`);
+
+    // Save SMS log
+    StorageService.addSmsLog({
+      id: 'sos_' + Date.now(),
+      timestamp,
+      recipients: contacts.map((c) => `${c.friendName} (${c.friendPhone})`),
+      message,
+      status: 'Sent',
+    });
+
+    for (const contact of contacts) {
+      const phone = contact.friendPhone.replace(/\D/g, ''); // sanitize phone number
+      if (!phone) continue;
+
+      const encodedMsg = encodeURIComponent(message);
       
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const mapLink = `https://maps.google.com/?q=${lat.toFixed(5)},${lng.toFixed(5)}`;
-          
-          setTimeout(() => {
-            setProgressMsg('Getting location address...');
+      // WhatsApp deep link
+      const waLink = `https://wa.me/${phone}?text=${encodedMsg}`;
+      window.open(waLink, '_blank');
+      
+      // 1-second delay
+      await new Promise(r => setTimeout(r, 1000));
+      
+      // SMS deep link backup
+      const smsLink = `sms:${phone}?body=${encodedMsg}`;
+      window.open(smsLink, '_blank');
+      
+      // 1-second delay
+      await new Promise(r => setTimeout(r, 1000));
+    }
 
-            setTimeout(() => {
-              setProgressMsg(`Broadcasting SOS SMS to ${contacts.length} emergency contacts...`);
-
-              // Save SMS log
-              StorageService.addSmsLog({
-                id: 'sos_' + Date.now(),
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                recipients: contacts.map((c) => `${c.friendName} (${c.friendPhone})`),
-                message: `SOS Alert! ${user?.name || 'User'} is in danger! Need help! Location Link: ${mapLink}`,
-                status: 'Sent',
-              });
-
-              setTimeout(() => {
-                setProgressMsg('SMS sent successfully!');
-
-                setTimeout(() => {
-                  setProgressMsg('Locating nearby help...');
-
-                  setTimeout(() => {
-                    setIsProgressOpen(false);
-                    setSosSuccessToast('SOS Alert Sent! Locating nearby help...');
-                    setTimeout(() => setSosSuccessToast(''), 4000);
-                    onNavigate('safe_places');
-                  }, 800);
-                }, 1000);
-              }, 1200);
-            }, 800);
-          }, 800);
-        },
-        (err) => {
-          // Fallback if Geolocation fails or denied
-          const lat = 28.535517;
-          const lng = 77.391029;
-          const mapLink = `https://maps.google.com/?q=${lat},${lng}`;
-
-          setProgressMsg(`Broadcasting SOS SMS to ${contacts.length} emergency contacts...`);
-          StorageService.addSmsLog({
-            id: 'sos_' + Date.now(),
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            recipients: contacts.map((c) => `${c.friendName} (${c.friendPhone})`),
-            message: `SOS Alert! ${user?.name || 'User'} is in danger! Location Link: ${mapLink}`,
-            status: 'Sent',
-          });
-
-          setTimeout(() => {
-            setProgressMsg('SMS sent successfully!');
-            setTimeout(() => {
-              setIsProgressOpen(false);
-              onNavigate('safe_places');
-            }, 1000);
-          }, 1200);
-        },
-        { timeout: 5000 }
-      );
-    }, 600);
+    setProgressMsg('Alerts sent successfully!');
+    
+    setTimeout(() => {
+      setIsProgressOpen(false);
+      toast.success('SOS Alert Sent! Locating nearby help...', { duration: 4000 });
+      onNavigate('safe_places');
+    }, 1000);
   };
 
   // Animation variants

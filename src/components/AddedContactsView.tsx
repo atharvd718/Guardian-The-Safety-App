@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, UserPlus, Trash2, Phone, Heart, Users, AlertCircle } from 'lucide-react';
-import { StorageService } from '../lib/storage';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { useUser } from '@clerk/clerk-react';
 import { ContactNew } from '../types';
 
 interface AddedContactsViewProps {
@@ -12,17 +14,50 @@ export const AddedContactsView: React.FC<AddedContactsViewProps> = ({
   onBack,
   onNavigateAdd,
 }) => {
+  const { user } = useUser();
   const [contacts, setContacts] = useState<ContactNew[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Load contacts from Firestore on mount
   useEffect(() => {
-    setContacts(StorageService.getContacts());
-  }, []);
+    if (!user) return;
+    const loadContacts = async () => {
+      try {
+        const contactsRef = collection(db, 'users', user.id, 'contacts');
+        const snapshot = await getDocs(contactsRef);
+        const loaded = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as ContactNew[];
+        setContacts(loaded);
+      } catch (error) {
+        console.error('Failed to load contacts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadContacts();
+  }, [user]);
 
-  const handleDelete = (phone: string, name: string) => {
+  const handleDelete = async (phone: string, name: string, contactId?: string) => {
     const confirmDelete = window.confirm(`Are you sure you want to remove ${name}?`);
-    if (confirmDelete) {
-      StorageService.removeContact(phone);
-      setContacts(StorageService.getContacts());
+    if (confirmDelete && user) {
+      try {
+        if (contactId) {
+          await deleteDoc(doc(db, 'users', user.id, 'contacts', contactId));
+          setContacts(prev => prev.filter(c => c.id !== contactId));
+          console.log('Contact deleted from Firestore');
+        } else {
+          // fallback if somehow id is missing, match by phone
+          const toDelete = contacts.find(c => c.friendPhone === phone);
+          if (toDelete?.id) {
+            await deleteDoc(doc(db, 'users', user.id, 'contacts', toDelete.id));
+            setContacts(prev => prev.filter(c => c.id !== toDelete.id));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to delete contact:', error);
+      }
     }
   };
 

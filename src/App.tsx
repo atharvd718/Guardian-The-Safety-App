@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { ScreenType } from './types';
 import { StorageService } from './lib/storage';
@@ -89,6 +90,7 @@ export function App() {
 
   return (
     <>
+      <Toaster position="top-center" />
       <SignedOut>
         <RedirectToSignIn />
       </SignedOut>

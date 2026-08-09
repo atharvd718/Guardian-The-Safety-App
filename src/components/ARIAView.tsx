@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useUser } from '@clerk/clerk-react';
+import { collection, query, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { ArrowLeft, Send, Sparkles, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from "motion/react";
 import AriaCharacter from '../assets/aria-character.svg';
+import { chatWithARIA, detectDanger } from '../services/gemini';
 
 interface ARIAViewProps {
   onBack: () => void;
@@ -95,6 +99,7 @@ User: "My boyfriend hit me"
 ARIA: "What happened to you is not okay — and it is not your fault. You deserve to be safe. Please call NCW helpline: 7827170170 (free, 24/7). If you need to leave, I can help you plan that safely."`;
 
 export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
+  const { user } = useUser();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome_1',
@@ -107,7 +112,38 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [charState, setCharState] = useState<CharacterState>('GREETING');
+  const [showDangerBanner, setShowDangerBanner] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load chat history
+  useEffect(() => {
+    if (!user) return;
+    const loadChat = async () => {
+      try {
+        const q = query(
+          collection(db, 'users', user.id, 'chats'),
+          orderBy('timestamp', 'asc')
+        );
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const history = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: data.id || doc.id,
+              sender: data.sender,
+              text: data.text,
+              time: data.time,
+              isEmergency: data.isEmergency
+            } as Message;
+          });
+          setMessages(history);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      }
+    };
+    loadChat();
+  }, [user]);
 
   // Transition from Greeting to Idle on mount
   useEffect(() => {
@@ -128,17 +164,17 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
   };
 
   const handleSend = async (textToSend?: string) => {
-    const query = textToSend || input;
-    if (!query.trim() || loading) return;
+    const queryStr = textToSend || input;
+    if (!queryStr.trim() || loading) return;
 
-    const isEmerg = checkEmergency(query);
+    const isEmerg = checkEmergency(queryStr);
     if (isEmerg) setCharState('ALERT');
     else setCharState('THINKING');
 
     const userMsg: Message = {
       id: 'usr_' + Date.now(),
       sender: 'user',
-      text: query.trim(),
+      text: queryStr.trim(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isEmergency: isEmerg,
     };
@@ -147,30 +183,35 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
     if (!textToSend) setInput('');
     setLoading(true);
 
+    if (user) {
+      try {
+        await addDoc(collection(db, 'users', user.id, 'chats'), {
+          ...userMsg,
+          timestamp: serverTimestamp()
+        });
+      } catch (error) {
+        console.error('Failed to save user message:', error);
+      }
+    }
+
     try {
       const historyFormatted = messages.map((m) => ({
         role: m.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: m.text }],
+        text: m.text,
       }));
 
-      const contents = [
-        ...historyFormatted,
-        { role: 'user', parts: [{ text: query.trim() }] }
-      ];
+      // Detect danger level
+      const dangerAnalysis = await detectDanger(queryStr);
+      if (dangerAnalysis.suggestSOS) {
+        setShowDangerBanner(true);
+      } else {
+        setShowDangerBanner(false);
+      }
 
-      const res = await fetch('/api/chat', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: contents
-        })
-      });
+      const result = await chatWithARIA(queryStr, historyFormatted);
+      if (!result.success) throw new Error("API Error");
 
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message || "API Error");
-
-      let responseText = data.candidates[0].content.parts[0].text;
+      let responseText = result.text;
       const botMsg: Message = {
         id: 'bot_' + Date.now(),
         sender: 'bot',
@@ -179,6 +220,17 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
       };
 
       setMessages((prev) => [...prev, botMsg]);
+      
+      if (user) {
+        try {
+          await addDoc(collection(db, 'users', user.id, 'chats'), {
+            ...botMsg,
+            timestamp: serverTimestamp()
+          });
+        } catch (error) {
+          console.error('Failed to save bot message:', error);
+        }
+      }
       
       setCharState('SPEAKING');
       setTimeout(() => {
@@ -193,6 +245,18 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, botMsg]);
+      
+      if (user) {
+        try {
+          await addDoc(collection(db, 'users', user.id, 'chats'), {
+            ...botMsg,
+            timestamp: serverTimestamp()
+          });
+        } catch (error) {
+          console.error('Failed to save bot error message:', error);
+        }
+      }
+      
       setCharState('IDLE');
     } finally {
       setLoading(false);
@@ -293,6 +357,14 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
             </div>
           </div>
         </div>
+
+        {/* Danger Banner */}
+        {showDangerBanner && (
+          <div className="bg-red-600 text-white p-3 mx-4 mt-4 rounded-xl text-center font-bold shadow-md cursor-pointer animate-pulse z-20 flex items-center justify-center gap-2" onClick={() => {}}>
+            <ShieldAlert className="w-5 h-5" />
+            <span>Are you in danger? Press SOS</span>
+          </div>
+        )}
 
         {/* Messages Scroll Area */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4">
