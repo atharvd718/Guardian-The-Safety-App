@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useAppUser } from '../lib/auth';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, isFirebaseConfigured } from '../lib/firebase';
 import { ArrowLeft, UserPlus, Phone, Heart, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 import { StorageService } from '../lib/storage';
 import { ContactInfo } from '../types';
@@ -20,7 +20,7 @@ const DEVICE_CONTACTS_PRESETS: ContactInfo[] = [
 ];
 
 export const AddContactsView: React.FC<AddContactsViewProps> = ({ onBack }) => {
-  const { user } = useUser();
+  const { user } = useAppUser();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [relation, setRelation] = useState('Family');
@@ -30,7 +30,13 @@ export const AddContactsView: React.FC<AddContactsViewProps> = ({ onBack }) => {
   const [toast, setToast] = useState('');
 
   const saveContact = async (contact: any) => {
-    if (!user) return;
+    StorageService.addContact({
+      friendName: contact.name,
+      friendPhone: contact.phone,
+      friendRelation: contact.relation || 'Contact',
+    });
+
+    if (!isFirebaseConfigured || !db || !user) return;
     try {
       const contactsRef = collection(db, 'users', user.id, 'contacts');
       await addDoc(contactsRef, {

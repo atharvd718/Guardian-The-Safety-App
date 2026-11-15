@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, UserPlus, Trash2, Phone, Heart, Users, AlertCircle } from 'lucide-react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { useUser } from '@clerk/clerk-react';
+import { db, isFirebaseConfigured } from '../lib/firebase';
+import { useAppUser } from '../lib/auth';
+import { StorageService } from '../lib/storage';
 import { ContactNew } from '../types';
 
 interface AddedContactsViewProps {
@@ -14,13 +15,17 @@ export const AddedContactsView: React.FC<AddedContactsViewProps> = ({
   onBack,
   onNavigateAdd,
 }) => {
-  const { user } = useUser();
-  const [contacts, setContacts] = useState<ContactNew[]>([]);
+  const { user } = useAppUser();
+  const [contacts, setContacts] = useState<ContactNew[]>(() => StorageService.getContacts());
   const [loading, setLoading] = useState(true);
 
-  // Load contacts from Firestore on mount
+  // Load contacts from StorageService and Firestore on mount
   useEffect(() => {
-    if (!user) return;
+    setContacts(StorageService.getContacts());
+    if (!isFirebaseConfigured || !db || !user) {
+      setLoading(false);
+      return;
+    }
     const loadContacts = async () => {
       try {
         const contactsRef = collection(db, 'users', user.id, 'contacts');
@@ -29,7 +34,10 @@ export const AddedContactsView: React.FC<AddedContactsViewProps> = ({
           id: doc.id,
           ...doc.data()
         })) as ContactNew[];
-        setContacts(loaded);
+        if (loaded.length > 0) {
+          setContacts(loaded);
+          StorageService.setContacts(loaded);
+        }
       } catch (error) {
         console.error('Failed to load contacts:', error);
       } finally {
@@ -41,22 +49,22 @@ export const AddedContactsView: React.FC<AddedContactsViewProps> = ({
 
   const handleDelete = async (phone: string, name: string, contactId?: string) => {
     const confirmDelete = window.confirm(`Are you sure you want to remove ${name}?`);
-    if (confirmDelete && user) {
-      try {
-        if (contactId) {
-          await deleteDoc(doc(db, 'users', user.id, 'contacts', contactId));
-          setContacts(prev => prev.filter(c => c.id !== contactId));
-          console.log('Contact deleted from Firestore');
-        } else {
-          // fallback if somehow id is missing, match by phone
-          const toDelete = contacts.find(c => c.friendPhone === phone);
-          if (toDelete?.id) {
-            await deleteDoc(doc(db, 'users', user.id, 'contacts', toDelete.id));
-            setContacts(prev => prev.filter(c => c.id !== toDelete.id));
+    if (confirmDelete) {
+      StorageService.removeContact(phone);
+      setContacts(prev => prev.filter(c => c.friendPhone !== phone && c.id !== contactId));
+      if (isFirebaseConfigured && db && user) {
+        try {
+          if (contactId) {
+            await deleteDoc(doc(db, 'users', user.id, 'contacts', contactId));
+          } else {
+            const toDelete = contacts.find(c => c.friendPhone === phone);
+            if (toDelete?.id) {
+              await deleteDoc(doc(db, 'users', user.id, 'contacts', toDelete.id));
+            }
           }
+        } catch (error) {
+          console.error('Failed to delete contact:', error);
         }
-      } catch (error) {
-        console.error('Failed to delete contact:', error);
       }
     }
   };
@@ -139,7 +147,7 @@ export const AddedContactsView: React.FC<AddedContactsViewProps> = ({
                 </div>
 
                 <button
-                  onClick={() => handleDelete(contact.friendPhone, contact.friendName)}
+                  onClick={() => handleDelete(contact.friendPhone, contact.friendName, contact.id)}
                   className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition"
                   title="Remove Contact"
                 >

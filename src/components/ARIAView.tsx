@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useAppUser } from '../lib/auth';
 import { collection, query, orderBy, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, isFirebaseConfigured } from '../lib/firebase';
 import { ArrowLeft, Send, Sparkles, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from "motion/react";
 import AriaCharacter from '../assets/aria-character.svg';
@@ -99,7 +99,7 @@ User: "My boyfriend hit me"
 ARIA: "What happened to you is not okay — and it is not your fault. You deserve to be safe. Please call NCW helpline: 7827170170 (free, 24/7). If you need to leave, I can help you plan that safely."`;
 
 export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
-  const { user } = useUser();
+  const { user } = useAppUser();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome_1',
@@ -117,7 +117,7 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
 
   // Load chat history
   useEffect(() => {
-    if (!user) return;
+    if (!isFirebaseConfigured || !db || !user) return;
     const loadChat = async () => {
       try {
         const q = query(
@@ -183,7 +183,7 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
     if (!textToSend) setInput('');
     setLoading(true);
 
-    if (user) {
+    if (isFirebaseConfigured && db && user) {
       try {
         await addDoc(collection(db, 'users', user.id, 'chats'), {
           ...userMsg,
@@ -221,7 +221,7 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
 
       setMessages((prev) => [...prev, botMsg]);
       
-      if (user) {
+      if (isFirebaseConfigured && db && user) {
         try {
           await addDoc(collection(db, 'users', user.id, 'chats'), {
             ...botMsg,
@@ -246,7 +246,7 @@ export const ARIAView: React.FC<ARIAViewProps> = ({ onBack }) => {
       };
       setMessages((prev) => [...prev, botMsg]);
       
-      if (user) {
+      if (isFirebaseConfigured && db && user) {
         try {
           await addDoc(collection(db, 'users', user.id, 'chats'), {
             ...botMsg,

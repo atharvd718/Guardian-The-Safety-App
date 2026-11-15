@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, Shield, AlertCircle } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
 import { StorageService } from '../../lib/storage';
 import { FirebaseService } from '../../lib/firebase';
+import { GuardianLogo } from '../GuardianLogo';
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
@@ -84,8 +85,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between max-w-md mx-auto p-6 shadow-xl border-x border-slate-200">
       {/* Top Graphic Header */}
       <div className="pt-8 pb-4 text-center space-y-4">
-        <div className="w-20 h-20 rounded-3xl bg-rose-600 text-white flex items-center justify-center mx-auto shadow-xl shadow-rose-200">
-          <Shield className="w-10 h-10" />
+        <div className="flex justify-center">
+          <GuardianLogo size={80} />
         </div>
         <div>
           <h1 className="text-2xl font-black text-slate-900">Welcome Back</h1>

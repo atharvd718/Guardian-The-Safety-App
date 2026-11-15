@@ -1,51 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #E8437A;
-  --color-primary-active: #D42B62;
+  --color-primary: #C2185B;
+  --color-primary-active: #9E1349;
   --color-secondary: #FF85A1;
   --color-accent: #10B981;
-  
-  --color-background: #FDF0F3;
-  --color-surface: rgba(255, 255, 255, 0.7);
-  --color-foreground: #4A154B;
-  --color-muted: #8E5A8F;
-  
-  --color-border: rgba(232, 67, 122, 0.15);
-  --color-destructive: #EF4444;
+
+  --color-background: #FAF5F7;
+  --color-surface: rgba(255, 253, 251, 0.88);
+  --color-surface-elevated: #FFFDFB;
+  --color-foreground: #3E142B;
+  --color-muted: #7D4E66;
+
+  --color-border: rgba(194, 24, 91, 0.14);
+  --color-destructive: #DC2626;
+}
+
+/* Theme 1: Blush Rose (Light Editorial) */
+:root,
+[data-theme="blush"] {
+  --color-primary: #C2185B;
+  --color-primary-active: #9E1349;
+  --color-secondary: #F48FB1;
+  --color-accent: #0D9488;
+  --color-background: #FAF5F7;
+  --color-canvas-outer: #F0E4E9;
+  --color-surface: rgba(255, 253, 251, 0.9);
+  --color-surface-elevated: #FFFDFB;
+  --color-surface-tint: #FDF0F4;
+  --color-foreground: #3E142B;
+  --color-muted: #7A4B63;
+  --color-border: rgba(194, 24, 91, 0.15);
+  --color-shadow-rose: rgba(166, 75, 101, 0.12);
+}
+
+/* Theme 2: Rose Cream (Warm Vintage Paper) */
+[data-theme="cream"] {
+  --color-primary: #9E2A55;
+  --color-primary-active: #7D1F42;
+  --color-secondary: #E6A4B4;
+  --color-accent: #15803D;
+  --color-background: #FAF4EE;
+  --color-canvas-outer: #EFE4D8;
+  --color-surface: rgba(255, 253, 249, 0.92);
+  --color-surface-elevated: #FFFDF9;
+  --color-surface-tint: #F9E5E3;
+  --color-foreground: #45182E;
+  --color-muted: #7D5364;
+  --color-border: rgba(158, 42, 85, 0.16);
+  --color-shadow-rose: rgba(143, 61, 84, 0.12);
+}
+
+/* Theme 3: Velvet Night (Dark Aubergine Studio) */
+[data-theme="velvet"] {
+  --color-primary: #F06292;
+  --color-primary-active: #EC407A;
+  --color-secondary: #F8BBD0;
+  --color-accent: #34D399;
+  --color-background: #18131B;
+  --color-canvas-outer: #110D13;
+  --color-surface: rgba(35, 28, 39, 0.92);
+  --color-surface-elevated: #251E2A;
+  --color-surface-tint: #2F2435;
+  --color-foreground: #F8E8EE;
+  --color-muted: #C9A7B5;
+  --color-border: rgba(240, 98, 146, 0.22);
+  --color-shadow-rose: rgba(0, 0, 0, 0.35);
 }
 
 @layer base {
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700&display=swap');
-  
   body {
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
-    background-color: var(--color-background);
+    background-color: var(--color-canvas-outer, var(--color-background));
     color: var(--color-foreground);
+    transition: background-color 220ms ease, color 220ms ease;
   }
 
   h1, h2, h3, h4, h5, h6, .font-serif {
     font-family: 'DM Serif Display', serif;
   }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  }
 }
 
-/* Custom Pulsing Audio Wave & Ripple Animations */
-@keyframes ripple {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 0.3; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.animate-ripple {
-  animation: ripple 2s infinite ease-in-out;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @keyframes sos-pulse {
-  0% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.4); opacity: 0; }
-  100% { transform: scale(1); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.38);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
 }
 
 .animate-sos-pulse {
-  animation: sos-pulse 2s cubic-bezier(0.0, 0.0, 0.2, 1) infinite;
+  animation: sos-pulse 2.1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sos-pulse {
+    animation: none;
+  }
 }

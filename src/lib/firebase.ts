@@ -31,24 +31,24 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-Object.entries(firebaseConfig).forEach(([key, value]) => {
-  if (value === undefined || value === '') {
-    console.warn(`Firebase config warning: ${key} is undefined or empty! Check your .env file.`);
+export const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.projectId
+);
+
+let appInstance: any = null;
+let dbInstance: any = null;
+let authInstance: any = null;
+let googleProviderInstance: any = null;
+
+if (isFirebaseConfigured) {
+  try {
+    appInstance = initializeApp(firebaseConfig);
+    dbInstance = getFirestore(appInstance);
+    authInstance = getAuth(appInstance);
+    googleProviderInstance = new GoogleAuthProvider();
+  } catch (error) {
+    console.error('Failed to initialize Firebase:', error);
   }
-});
-
-let appInstance: any;
-let dbInstance: any;
-let authInstance: any;
-let googleProviderInstance: any;
-
-try {
-  appInstance = initializeApp(firebaseConfig);
-  dbInstance = getFirestore(appInstance);
-  authInstance = getAuth(appInstance);
-  googleProviderInstance = new GoogleAuthProvider();
-} catch (error) {
-  console.error('Failed to initialize Firebase:', error);
 }
 
 export const app = appInstance;
@@ -86,12 +86,12 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map((provider: any) => ({
+      userId: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      emailVerified: auth?.currentUser?.emailVerified,
+      isAnonymous: auth?.currentUser?.isAnonymous,
+      tenantId: auth?.currentUser?.tenantId,
+      providerInfo: auth?.currentUser?.providerData?.map((provider: any) => ({
         providerId: provider.providerId,
         email: provider.email,
       })) || [],
@@ -105,7 +105,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 
 // Connection test
 async function testConnection() {
-  if (!db) return;
+  if (!isFirebaseConfigured || !db) return;
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
@@ -120,6 +120,9 @@ testConnection();
 export const FirebaseService = {
   // Sign in with Google
   async loginWithGoogle() {
+    if (!isFirebaseConfigured || !auth || !db) {
+      throw new Error('Firebase is not configured. Please use Email/Password or Guest sign-in.');
+    }
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
@@ -153,6 +156,15 @@ export const FirebaseService = {
 
   // Anonymous Sign In fallback
   async loginAnonymously() {
+    if (!isFirebaseConfigured || !auth || !db) {
+      return {
+        uid: 'usr_guest_' + Date.now(),
+        name: 'Guest Guardian',
+        email: 'guest@guardian.app',
+        phone: '',
+        dob: '',
+      } as Users;
+    }
     try {
       const result = await signInAnonymously(auth);
       const user = result.user;
@@ -180,12 +192,13 @@ export const FirebaseService = {
 
   // Logout
   async logout() {
+    if (!isFirebaseConfigured || !auth) return;
     await signOut(auth);
   },
 
   // Save/Update User Profile
   async saveUserProfile(user: Users) {
-    if (!auth.currentUser) return;
+    if (!isFirebaseConfigured || !db || !auth?.currentUser) return;
     const path = `users/${auth.currentUser.uid}`;
     try {
       await setDoc(doc(db, 'users', auth.currentUser.uid), {
@@ -203,6 +216,7 @@ export const FirebaseService = {
 
   // Contacts
   async getContacts(userId: string): Promise<ContactNew[]> {
+    if (!isFirebaseConfigured || !db) return [];
     const path = `users/${userId}/contacts`;
     try {
       const snapshot = await getDocs(collection(db, 'users', userId, 'contacts'));

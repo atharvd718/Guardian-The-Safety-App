@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mic, MapPin, ShieldAlert, ArrowRight, Check } from 'lucide-react';
+import { GuardianLogo } from './GuardianLogo';
 
 interface OnboardingCarouselProps {
   onComplete: () => void;
@@ -56,12 +57,7 @@ export const OnboardingCarousel: React.FC<OnboardingCarouselProps> = ({ onComple
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between max-w-md mx-auto relative overflow-hidden shadow-xl border-x border-slate-200">
       {/* Top Header */}
       <div className="p-6 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-rose-600 flex items-center justify-center text-white font-black text-sm">
-            G
-          </div>
-          <span className="font-bold text-slate-800 text-sm tracking-wide">GUARDIAN</span>
-        </div>
+        <GuardianLogo size={34} showWordmark />
 
         <button
           onClick={onComplete}

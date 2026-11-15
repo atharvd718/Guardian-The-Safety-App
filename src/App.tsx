@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
+import { AuthGate } from './lib/auth';
 import { ScreenType } from './types';
 import { StorageService } from './lib/storage';
 import { auth, FirebaseService } from './lib/firebase';
@@ -20,6 +20,11 @@ import { ARIAView } from './components/ARIAView';
 import { SafePlacesView } from './components/SafePlacesView';
 import { HelplinesView } from './components/HelplinesView';
 import { SelfDefenseView } from './components/SelfDefenseView';
+import { UnsafeZonesView } from './components/UnsafeZonesView';
+import { FakeCallView } from './components/FakeCallView';
+import { SafetyCheckInView } from './components/SafetyCheckInView';
+import { SafetyIdView } from './components/SafetyIdView';
+import { useGeofenceMonitor } from './hooks/useGeofenceMonitor';
 import InstallPWA from './components/InstallPWA';
 
 export function App() {
@@ -30,7 +35,25 @@ export function App() {
     pass: string;
   }>({ name: '', email: '', pass: '' });
 
+  const isAuthenticatedScreen = ![
+    'splash',
+    'onboarding',
+    'login',
+    'register',
+    'register_detail',
+  ].includes(currentScreen);
+
+  const {
+    monitoringEnabled,
+    toggleMonitoring,
+    zones: unsafeZones,
+    currentPosition,
+    permissionState,
+    insideZoneIds,
+  } = useGeofenceMonitor(isAuthenticatedScreen);
+
   useEffect(() => {
+    if (!auth) return;
     // Listen to Firebase Auth state
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -107,12 +130,12 @@ export function App() {
   return (
     <>
       <Toaster position="top-center" />
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
-      <SignedIn>
-        <div className="min-h-screen bg-slate-200 flex items-center justify-center font-sans antialiased sm:py-6">
-          <div className="w-full max-w-md bg-white sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-200">
+      <AuthGate>
+        <div
+          className="min-h-screen flex items-center justify-center font-sans antialiased sm:py-6 transition-colors"
+          style={{ backgroundColor: 'var(--color-canvas-outer, #F0E4E9)' }}
+        >
+          <div className="w-full max-w-md bg-[var(--color-background)] sm:rounded-3xl overflow-hidden shadow-2xl border border-[var(--color-border)]">
             {currentScreen === 'splash' && (
               <SplashScreen onFinish={handleSplashFinish} />
             )}
@@ -150,6 +173,9 @@ export function App() {
               <DashboardView
                 onNavigate={setCurrentScreen}
                 onLogout={handleLogout}
+                geofenceMonitoringEnabled={monitoringEnabled}
+                activeUnsafeZonesCount={unsafeZones.filter((z) => z.enabled).length}
+                insideUnsafeZonesCount={insideZoneIds.length}
               />
             )}
 
@@ -191,9 +217,32 @@ export function App() {
             {currentScreen === 'self_defense' && (
               <SelfDefenseView onBack={() => setCurrentScreen('dashboard')} />
             )}
+
+            {currentScreen === 'unsafe_zones' && (
+              <UnsafeZonesView
+                onBack={() => setCurrentScreen('dashboard')}
+                monitoringEnabled={monitoringEnabled}
+                onToggleMonitoring={toggleMonitoring}
+                currentPosition={currentPosition}
+                permissionState={permissionState}
+                insideZoneIds={insideZoneIds}
+              />
+            )}
+
+            {currentScreen === 'fake_call' && (
+              <FakeCallView onBack={() => setCurrentScreen('dashboard')} />
+            )}
+
+            {currentScreen === 'safety_checkin' && (
+              <SafetyCheckInView onBack={() => setCurrentScreen('dashboard')} />
+            )}
+
+            {currentScreen === 'safety_id' && (
+              <SafetyIdView onBack={() => setCurrentScreen('dashboard')} />
+            )}
           </div>
         </div>
-      </SignedIn>
+      </AuthGate>
       <InstallPWA />
     </>
   );

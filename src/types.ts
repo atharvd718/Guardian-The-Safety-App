@@ -46,6 +46,42 @@ export interface SmsLogItem {
   status: 'Sent' | 'Failed';
 }
 
+export interface UnsafeZone {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  notifyOnEnter: boolean;
+  notifyOnExit: boolean;
+  enabled: boolean;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface GeofenceEventItem {
+  id: string;
+  zoneId: string;
+  zoneName: string;
+  eventType: 'enter' | 'exit';
+  timestamp: string;
+  lat: number;
+  lng: number;
+  recipients: string[];
+  message: string;
+  silent: boolean;
+  status: 'Dispatched' | 'Queued';
+}
+
+export interface SafetyIdProfile {
+  fullName: string;
+  bloodGroup: string;
+  allergies: string;
+  medicalNotes: string;
+  safeAddress: string;
+  emergencyNote: string;
+}
+
 export type ScreenType =
   | 'splash'
   | 'onboarding'
@@ -61,4 +97,8 @@ export type ScreenType =
   | 'aria'
   | 'safe_places'
   | 'helplines'
-  | 'self_defense';
+  | 'self_defense'
+  | 'unsafe_zones'
+  | 'fake_call'
+  | 'safety_checkin'
+  | 'safety_id';

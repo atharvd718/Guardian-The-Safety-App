@@ -1,5 +1,81 @@
-<svg xmlns="http://www.w3.org/2000/svg" 
-     viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#C2185B"/>
-  <text y=".9em" font-size="80" x="10">🛡️</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF5F7"/>
+      <stop offset="100%" stop-color="#FADAE2"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="120" y1="68" x2="392" y2="444" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E8437A"/>
+      <stop offset="55%" stop-color="#C2185B"/>
+      <stop offset="100%" stop-color="#7A113E"/>
+    </linearGradient>
+    <linearGradient id="wingLeft" x1="150" y1="180" x2="256" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF9F7"/>
+      <stop offset="100%" stop-color="#F9D5DF"/>
+    </linearGradient>
+    <linearGradient id="wingRight" x1="362" y1="180" x2="256" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FDE8EE"/>
+    </linearGradient>
+    <linearGradient id="beaconGrad" x1="256" y1="122" x2="256" y2="210" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFDF8"/>
+      <stop offset="100%" stop-color="#FFE0EA"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded app tile -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  <rect x="16" y="16" width="480" height="480" rx="98" stroke="#E8437A" stroke-opacity="0.18" stroke-width="4"/>
+
+  <!-- Soft protective halo behind shield -->
+  <circle cx="256" cy="256" r="196" fill="#E8437A" fill-opacity="0.08"/>
+
+  <!-- Main sculpted protective shield -->
+  <path
+    d="M256 68C206 96 146 112 104 118V242C104 342 170 416 256 446C342 416 408 342 408 242V118C366 112 306 96 256 68Z"
+    fill="url(#shieldGrad)"
+  />
+  <!-- Inner shield hairline rim -->
+  <path
+    d="M256 88C212 112 160 126 122 132V242C122 330 180 396 256 424C332 396 390 330 390 242V132C352 126 300 112 256 88Z"
+    stroke="#FFFFFF"
+    stroke-opacity="0.28"
+    stroke-width="4"
+  />
+
+  <!-- Stylized feminine guardian figure & embracing lotus wings -->
+  <!-- Head / beacon -->
+  <circle cx="256" cy="168" r="28" fill="url(#beaconGrad)"/>
+  <!-- Protective crescent / crown arc -->
+  <path
+    d="M214 148C226 128 242 120 256 120C270 120 286 128 298 148"
+    stroke="#FFD5E1"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+
+  <!-- Left embracing wing / draped silhouette -->
+  <path
+    d="M256 376C202 354 166 304 166 244C166 218 176 196 192 184C198 228 222 260 256 284V376Z"
+    fill="url(#wingLeft)"
+  />
+
+  <!-- Right embracing wing / draped silhouette -->
+  <path
+    d="M256 376C310 354 346 304 346 244C346 218 336 196 320 184C314 228 290 260 256 284V376Z"
+    fill="url(#wingRight)"
+  />
+
+  <!-- Central heart-flame core -->
+  <path
+    d="M256 214C240 214 226 226 226 242C226 266 256 290 256 290C256 290 286 266 286 242C286 226 272 214 256 214Z"
+    fill="#FF85A1"
+  />
+  <circle cx="256" cy="240" r="10" fill="#FFFDF9"/>
+
+  <!-- Subtle safety beacon sparkle at top crest -->
+  <path
+    d="M256 98L261 109L272 114L261 119L256 130L251 119L240 114L251 109Z"
+    fill="#10B981"
+  />
 </svg>
